@@ -16,6 +16,65 @@ int attr,rows;
 node *root = NULL;
 table training_data;
 
+double entropy(int n, int arr[])
+{
+	bool flag[n];
+	double data=n;
+	memset(flag,false,sizeof flag);
+	double res=0;
+	
+	for(int x=0;x<n;x++)
+	{
+		if(flag[x]==false)
+		{
+			flag[x]==true;
+			double found=1;
+			for(int y=x+1;y<n;y++)
+			{
+				if(arr[y]==arr[x])
+				{
+					flag[y]=true;
+					found=found+1;
+				}
+			}
+			double prob = found/data;
+			res+= -prob * (log(prob)/log(2));
+		}
+	}
+	return res;
+}
+
+double infogain(int n, double parent, int arr[], int kelas[])
+{
+	bool flag[n];
+	memset(flag,false,sizeof flag);
+	
+	double res=0;
+	for(int x=0;x<n;x++)
+	{
+		if(flag[x]==false)
+		{
+			flag[x]=true;
+			int found=1;
+			int temp[n];
+			temp[0]=kelas[x];
+			for(int y=x+1;y<n;y++)
+			{
+				if(arr[x]==arr[y])
+				{
+					flag[y]=true;
+					temp[found]=kelas[y];
+					found++;
+				}
+			}
+			double entropy_now = entropy(found,temp);
+			double ketemu = found, data = n;
+			res+=((ketemu/data)*entropy_now);
+		}
+	}
+	return parent-res;
+}
+
 node* build(node *p, table data_now, int record, int attribute)
 {
 	if(data_now.size()==0)return NULL;
