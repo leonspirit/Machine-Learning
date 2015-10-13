@@ -47,6 +47,7 @@ double entropy(int n, string arr[])
 
 double infogain(int n, double parent, string arr[], string kelas[])
 {
+	//cout<<n<<endl;
 	bool flag[n];
 	memset(flag,false,sizeof flag);
 	
@@ -113,20 +114,21 @@ node* build(table data_now, int record, int attribute, double prnt_entropy)
 		temp->label=ans;
 		return temp;
 	}
-	
-	double maks=-99; int ans=-1;
+	//cout<<"debug "<<record<<" "<<attribute<<" "<<prnt_entropy<<endl;
+	double maks=-99, entropy_picked; int ans=-1;
 	for(int x=0;x<attribute-1;x++)
 	{
 		int id=0;
 		string arr[record], kless[record];
-		for(int y=0;y<data_now.size();y++)
+		for(int y=0;y<record;y++)
 		{
-			arr[id++]=data_now[y][x];
+			arr[id]=data_now[y][x];
 			kless[id++]=data_now[y][attribute-1];
 		}
+		
 		double info_gain = infogain(record,prnt_entropy,arr,kless);
-		if(info_gain > maks){maks=info_gain; ans=x;}
-	}
+		if(info_gain > maks){maks=info_gain; ans=x; entropy_picked=entropy(record,arr);}
+	}	
 	
 	bool flag[record];
 	memset(flag,false,sizeof flag);
@@ -155,10 +157,28 @@ node* build(table data_now, int record, int attribute, double prnt_entropy)
 				}
 			}
 			temp->value.pb(data_now[x][ans]);
-			temp->children.pb(build(anak,jumlah,attribute-1,1));
+			temp->children.pb(build(anak,jumlah,attribute-1,entropy_picked));
 		}
 	}
 	return temp;
+}
+
+string classify(node *p, vector<string>data_now)
+{
+	if(p->attr_pick==-1)return p->label;
+	
+	for(int x=0;x<p->value.size();x++)
+	{
+		if(data_now[p->attr_pick]==p->value[x])
+		{
+			vector<string>data_next;
+			for(int y=0;y<data_now.size();y++)
+			{
+				if(y!=p->attr_pick){data_next.pb(data_now[y]);}
+			}
+			return classify(p->children[x],data_next);
+		}
+	}
 }
 
 int main()
@@ -166,6 +186,7 @@ int main()
 	string data;
 	ifstream Files;
 	
+	//training data
 	Files.open("train_data.txt");
 	if(!Files)
 	{
@@ -182,7 +203,7 @@ int main()
 		{
 			if(data[x]==',')
 			{
-				att_count=1;
+				att_count++;
 				record.pb(data.substr(last,x-last));
 				last=x+1;
 			}
@@ -193,7 +214,7 @@ int main()
 		attr=max(attr,att_count);
 	}
 	Files.close();
-	
+	/*
 	//display first 10 of training data
 	cout<<"Training Data"<<endl;
 	for(int x=0;x<min(10,(int)training_data.size());x++)
@@ -204,14 +225,51 @@ int main()
 		}
 		cout<<endl;
 	}
-	
+	*/
 	//compute class entropy
 	int id=0;
 	string kless[rows];
 	for(int x=0;x<rows;x++)kless[id++]=training_data[x][attr-1];
 	
 	double class_entropy = entropy(rows, kless);
-	//root = build(training_data, rows, attr, class_entropy);
+	
+	//build decision tree
+	root = build(training_data, rows, attr, class_entropy);
+	
+	
+	//testing area
+	Files.open("test_data.txt");
+	if(!Files)
+	{
+		cerr << "Error: Testing file not found" <<endl;
+		exit(-1);
+	}
+	
+	//parsing test data
+	double korek=0;
+	double total=0;
+	while(getline(Files, data))
+	{
+		int last=0;
+		vector<string>record;
+		for(int x=0;x<data.length();x++)
+		{
+			if(data[x]==',')
+			{
+				record.pb(data.substr(last,x-last));
+				last=x+1;
+			}
+		}
+		record.pb(data.substr(last,data.length()-last));
+		total++;
+		
+		string ans=classify(root,record);
+		if(ans==record[attr-1])korek++;
+		//cout<<ans<<" "<<record[attr-1]<<endl;
+	}
+	Files.close();
+	
+	cout<<"Accuracy "<<korek/total*100<<endl;
 	
 	return 0;
 }
