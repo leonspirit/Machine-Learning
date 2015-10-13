@@ -10,13 +10,14 @@ struct node
 	int attr_pick;
 	string label;
 	vector<node*>children;
+	vector<string>value;
 };
 
 int attr,rows;
 node *root = NULL;
 table training_data;
 
-double entropy(int n, int arr[])
+double entropy(int n, string arr[])
 {
 	bool flag[n];
 	double data=n;
@@ -44,7 +45,7 @@ double entropy(int n, int arr[])
 	return res;
 }
 
-double infogain(int n, double parent, int arr[], int kelas[])
+double infogain(int n, double parent, string arr[], string kelas[])
 {
 	bool flag[n];
 	memset(flag,false,sizeof flag);
@@ -56,7 +57,7 @@ double infogain(int n, double parent, int arr[], int kelas[])
 		{
 			flag[x]=true;
 			int found=1;
-			int temp[n];
+			string temp[n];
 			temp[0]=kelas[x];
 			for(int y=x+1;y<n;y++)
 			{
@@ -75,7 +76,7 @@ double infogain(int n, double parent, int arr[], int kelas[])
 	return parent-res;
 }
 
-node* build(node *p, table data_now, int record, int attribute)
+node* build(table data_now, int record, int attribute, double prnt_entropy)
 {
 	if(data_now.size()==0)return NULL;
 	
@@ -88,6 +89,8 @@ node* build(node *p, table data_now, int record, int attribute)
 			break;
 		}
 	}
+	
+	//if homogenous, stop the recursion
 	if(homogen)
 	{
 		node *temp = new node();
@@ -96,16 +99,32 @@ node* build(node *p, table data_now, int record, int attribute)
 		return temp;
 	}
 	
+	//if no more attribute, stop the recursion
+	if(attribute==1)
+	{
+		map<string,int>peta;
+		for(int x=0;x<rows;x++)peta[data_now[x][0]]++;
+		
+		string ans; int maks=-99;
+		for(int x=0;x<rows;x++)if(peta[data_now[x][0]]>maks){maks=peta[data_now[x][0]]; ans=data_now[x][0];}
+		
+		node *temp = new node();
+		temp->attr_pick=-1;
+		temp->label=ans;
+		return temp;
+	}
+	
 	double maks=-99; int ans=-1;
 	for(int x=0;x<attribute-1;x++)
 	{
-		int arr[record], id=0, kless[record];
+		int id=0;
+		string arr[record], kless[record];
 		for(int y=0;y<data_now.size();y++)
 		{
 			arr[id++]=data_now[y][x];
 			kless[id++]=data_now[y][attribute-1];
 		}
-		double info_gain = infogain();
+		double info_gain = infogain(record,prnt_entropy,arr,kless);
 		if(info_gain > maks){maks=info_gain; ans=x;}
 	}
 	
@@ -118,23 +137,28 @@ node* build(node *p, table data_now, int record, int attribute)
 	{
 		if(flag[x]==false)
 		{
-			vector<string>child_data;
+			table anak;
 			flag[x]=true;
+			int jumlah=0;
 			for(int y=x;y<record;y++)
 			{
 				if(data_now[x][ans]==data_now[y][ans])
 				{
+					jumlah++;
 					flag[y]=true;
+					vector<string>child_data;
 					for(int z=0;z<attribute;z++)
 					{
 						if(z!=ans)child_data.pb(data_now[y][z]);
 					}
+					anak.pb(child_data);
 				}
 			}
+			temp->value.pb(data_now[x][ans]);
+			temp->children.pb(build(anak,jumlah,attribute-1,1));
 		}
 	}
-	
-	
+	return temp;
 }
 
 int main()
@@ -149,6 +173,7 @@ int main()
 		exit(-1);
 	}
 	
+	//parsing training data
 	while(getline(Files, data))
 	{
 		int att_count=1,last=0;
@@ -169,6 +194,7 @@ int main()
 	}
 	Files.close();
 	
+	//display first 10 of training data
 	cout<<"Training Data"<<endl;
 	for(int x=0;x<min(10,(int)training_data.size());x++)
 	{
@@ -179,7 +205,13 @@ int main()
 		cout<<endl;
 	}
 	
-	//root = build(root, training_data, rows, attr);
+	//compute class entropy
+	int id=0;
+	string kless[rows];
+	for(int x=0;x<rows;x++)kless[id++]=training_data[x][attr-1];
+	
+	double class_entropy = entropy(rows, kless);
+	//root = build(training_data, rows, attr, class_entropy);
 	
 	return 0;
 }
