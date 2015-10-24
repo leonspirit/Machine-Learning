@@ -76,11 +76,12 @@ double infogain(int n, double parent, string arr[], string kelas[])
 	}
 	return parent-res;
 }
+int id=1;
 
 node* build(table data_now, int record, int attribute, double prnt_entropy)
 {
 	if(data_now.size()==0)return NULL;
-	
+	//cout<<"debug "<<record<<" "<<attribute<<" "<<prnt_entropy<<endl;
 	bool homogen=true;
 	for(int x=1;x<data_now.size();x++)
 	{
@@ -97,21 +98,24 @@ node* build(table data_now, int record, int attribute, double prnt_entropy)
 		node *temp = new node();
 		temp->attr_pick=-1;
 		temp->label=data_now[0][attribute-1];
+		//cout<<"homogen "<<id++<<endl;
 		return temp;
 	}
 	
 	//if no more attribute, stop the recursion
 	if(attribute==1)
 	{
+		//cout<<"last attr 1"<<endl;
 		map<string,int>peta;
-		for(int x=0;x<rows;x++)peta[data_now[x][0]]++;
-		
+		for(int x=0;x<record;x++)peta[data_now[x][0]]++;
+		//cout<<"last attr 2"<<endl;
 		string ans; int maks=-99;
-		for(int x=0;x<rows;x++)if(peta[data_now[x][0]]>maks){maks=peta[data_now[x][0]]; ans=data_now[x][0];}
-		
+		for(int x=0;x<record;x++)if(peta[data_now[x][0]]>maks){maks=peta[data_now[x][0]]; ans=data_now[x][0];}
+		//cout<<"last attr 3"<<endl;
 		node *temp = new node();
 		temp->attr_pick=-1;
 		temp->label=ans;
+		//cout<<"attr 1"<<id++<<endl;
 		return temp;
 	}
 	//cout<<"debug "<<record<<" "<<attribute<<" "<<prnt_entropy<<endl;
@@ -165,6 +169,7 @@ node* build(table data_now, int record, int attribute, double prnt_entropy)
 
 string classify(node *p, vector<string>data_now)
 {
+	if(!p)return "";
 	if(p->attr_pick==-1)return p->label;
 	
 	for(int x=0;x<p->value.size();x++)
@@ -179,6 +184,7 @@ string classify(node *p, vector<string>data_now)
 			return classify(p->children[x],data_next);
 		}
 	}
+	return "";
 }
 
 int main()
@@ -209,12 +215,20 @@ int main()
 			}
 		}
 		record.pb(data.substr(last,data.length()-last));
+		
+		/*
+		//reversing
+		string temp=record[0];
+		record.erase(record.begin());
+		record.pb(temp);
+		*/
+		
 		training_data.pb(record);
 		rows++;
 		attr=max(attr,att_count);
 	}
 	Files.close();
-	/*
+	
 	//display first 10 of training data
 	cout<<"Training Data"<<endl;
 	for(int x=0;x<min(10,(int)training_data.size());x++)
@@ -225,7 +239,7 @@ int main()
 		}
 		cout<<endl;
 	}
-	*/
+	
 	//compute class entropy
 	int id=0;
 	string kless[rows];
@@ -235,7 +249,6 @@ int main()
 	
 	//build decision tree
 	root = build(training_data, rows, attr, class_entropy);
-	
 	
 	//testing area
 	Files.open("test_data.txt");
@@ -252,6 +265,7 @@ int main()
 	{
 		int last=0;
 		vector<string>record;
+		//cout<<"defak "<<data<<endl;
 		for(int x=0;x<data.length();x++)
 		{
 			if(data[x]==',')
@@ -263,13 +277,20 @@ int main()
 		record.pb(data.substr(last,data.length()-last));
 		total++;
 		
+		/*
+		//reversing
+		string temp=record[0];
+		record.erase(record.begin());
+		record.pb(temp);
+		*/
+		
 		string ans=classify(root,record);
 		if(ans==record[attr-1])korek++;
-		//cout<<ans<<" "<<record[attr-1]<<endl;
+		cout<<"Klasifikasi : "<<ans<<endl;
+		cout<<"Aslinya : "<<record[attr-1]<<endl;
 	}
 	Files.close();
 	
-	cout<<"Accuracy "<<korek/total*100<<endl;
-	
+	cout<<endl<<"Accuracy "<<korek/total*100<<endl;
 	return 0;
 }

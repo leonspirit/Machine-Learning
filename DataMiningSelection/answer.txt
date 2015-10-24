@@ -1,0 +1,13 @@
+ID, Class
+Iris-setosa, Iris-setosa
+Iris-setosa, Iris-setosa
+Iris-virginica, Iris-virginica
+Iris-versicolor, Iris-versicolor
+Iris-virginica, Iris-virginica
+Iris-setosa, Iris-setosa
+Iris-setosa, Iris-setosa
+Iris-virginica, Iris-virginica
+Iris-virginica, Iris-virginica
+Iris-versicolor, Iris-versicolor
+Accuracy : 100.00%
+Time Elapsed : 0.0010
