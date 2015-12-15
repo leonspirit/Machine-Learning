@@ -13,7 +13,7 @@ def rand2D(arr):
     now=0.01
     for i in range (arr.shape[0]):
         for j in range (arr.shape[1]):
-            #arr[i][j]=random.uniform(-0.5,0.5)
+            #arr[i][j]=random.uniform(-0.1,0.1)
             arr[i][j]=now 
             now=now+0.001
             
@@ -22,7 +22,7 @@ def rand3D(arr):
     for i in range (arr.shape[0]):
         for j in range (arr.shape[1]):
             for k in range (arr.shape[2]):
-                #arr[i][j][k]=random.uniform(-0.5,0.5)
+                #arr[i][j][k]=random.uniform(-0.1,0.1)
                 arr[i][j][k]=now
                 now=now+0.001
 
@@ -59,27 +59,31 @@ wi = np.zeros((attr+1,hunit))
 wh = np.zeros((hlayer-1,hunit+1,hunit))
 wo = np.zeros((hunit+1,3))
 
+#randomizing initial weight
 rand2D(wi)
 rand3D(wh)
 rand2D(wo)
 
 a =np.array([[3,0,2],[2,0,1],[1,0,1]])
-b =np.array([5,1,3])
+b =np.array([5.0,1.0,3.0])
 
 for x in range (epoch):
     
     for idx, record in X_train.iterrows():                  
     
+        #delta weight
         di = np.zeros((attr+1,hunit))   
         dh = np.zeros((hlayer-1,hunit+1,hunit))
         do = np.zeros((hunit+1,classes))    
     
+        #input data
         curr_data = np.zeros((attr+1,1))
         curr_data[0]=1
         
         for y in range(attr):
             curr_data[y+1]=record[y]
         
+        #output for hidden + output layer
         oh = np.zeros((hlayer,hunit))
         oo = np.zeros((classes,1))
     
@@ -102,6 +106,7 @@ for x in range (epoch):
         oo[:,0] = tmp[:,0]
         
         #print oo, kelas[y_train[idx]]
+        #error for output + hidden layer
         errh = np.zeros((hlayer,hunit))
         erro = np.zeros((classes,1))
         
@@ -109,11 +114,13 @@ for x in range (epoch):
         actual_class[:,0]=kelas[y_train[idx]]        
         
         #print actual_class
+        #compute error output
         erro = oo*(1-oo)*(actual_class-oo)
         #erro = actual_class-oo
         #print erro
         
         #print oh[hlayer-1]
+        #compute error hidden
         tmp = wo[1:,:]
         errh[hlayer-1] = oh[hlayer-1]*(1-oh[hlayer-1])*(np.reshape(np.dot(tmp,erro),hunit))
         
@@ -124,9 +131,12 @@ for x in range (epoch):
             idlayer = idlayer-1
             
         #print errh[0]
+        #compute delta weight input
         tmp2 = np.zeros((hunit,1))
         tmp2[:,0] = errh[0]
         di = di + (learn_rate * np.dot(curr_data,tmp2.transpose()))
+        
+        #compute delta weight output
         tmp = np.zeros((hunit,1))
         tmp[:,0]=oh[hlayer-1]
         tmp=np.insert(tmp,0,1,axis=0)
@@ -144,6 +154,7 @@ for x in range (epoch):
             tmp2[:,0] = errh[y+1]
             dh[y] = dh[y] + (learn_rate * np.dot(tmp,tmp2.transpose()))
         
+        #update weight value
         wi = wi+di
         wh = wh+dh
         wo = wo+do
@@ -178,5 +189,13 @@ with open(loc_submission, "wb") as outfile:
         tmp = np.dot(wo.transpose(),curr_output)
         oo[:,0] = tmp[:,0]
         
-        outfile.write("%s, %s\n" % (y_test[idx],oo))
+        ans = ' '
+        if oo[0]>oo[1] and oo[0]>oo[2]:
+            ans='Iris Setosa'
+        elif oo[1]>oo[0] and oo[1]>oo[2]:
+            ans='Iris Virginica'
+        else:
+            ans='Iris Versicolor'
+        
+        outfile.write("%s, %s\n" % (y_test[idx],ans))
         
