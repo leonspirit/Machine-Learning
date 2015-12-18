@@ -7,8 +7,6 @@ Created on Tue Dec 15 12:58:09 2015
 
 import numpy as np
 import pandas as pd
-import scipy
-import copy
 import random
 
 cluster = 2
@@ -66,7 +64,7 @@ for x in range (epoch):
         centroids[y] = np.mean(subcluster[y],axis=0)
     
 #print centroids
-
+error = np.zeros((len(df_train),attr))
 for x in range (len(df_train)):
     maxs = 99999
     clust = -1
@@ -76,5 +74,10 @@ for x in range (len(df_train)):
             maxs = tmp
             clust = y
     print 'Data ke-%d masuk cluster %d' % (x+1,clust+1)
+    error[x] = centroids[clust] - df_train.ix[x]
+
+error = np.power(error,2)
+
+print 'Total Error = %.3lf' % (np.sum(error)/len(df_train))
     
     
