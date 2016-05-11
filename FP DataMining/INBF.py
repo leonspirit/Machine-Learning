@@ -100,4 +100,17 @@ for t in range(itr):
     #print "%f %f %f %f %f %f %f\n" % (vecU[0],vecW[0], vecU[1],vecW[1], vecU[2],vecW[2], alpha)
 
 print vecW
+featureSelection = [(0,0) for x in range(field-2)]
+
+for i in range(len(vecW)):
+    temp = featureSelection[i]
+    temp = list(temp)
     
+    temp[0] = vecW[i]
+    temp[1] = i+1
+    temp = tuple(temp)
+    
+    featureSelection[i] = temp
+    
+featureSelection = sorted(featureSelection, key=comparator, reverse=True)
+print featureSelection
